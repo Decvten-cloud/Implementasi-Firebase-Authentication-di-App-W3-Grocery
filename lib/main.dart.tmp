@@ -1,0 +1,293 @@
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import 'models/product.dart';
+import 'widgets/common_widgets.dart';
+import 'pages/homepage.dart';
+import 'pages/orders.dart';
+import 'pages/cart.dart';
+import 'pages/favorites.dart';
+import 'pages/profile.dart';
+
+const kProducts = [
+  Product(
+    'p1',
+    'Fresh Grapes',
+    'https://images.unsplash.com/photo-1519996529931-28324d5a630e?auto=format&fit=crop&w=1200&q=80',
+    10.9,
+    12.9,
+    'Fruits',
+  ),
+  Product(
+    'p2',
+    'Gurame Fish',
+    'https://images.unsplash.com/photo-1603064752734-4b7aef0b0b0d?auto=format&fit=crop&w=1200&q=80',
+    10.9,
+    12.0,
+    'Fish',
+  ),
+  Product(
+    'p3',
+    'Tomatoes',
+    'https://images.unsplash.com/photo-1542838038-3b3b4f31c2c3?auto=format&fit=crop&w=1200&q=80',
+    10.9,
+    12.0,
+    'Vegetables',
+  ),
+];
+
+const kCategories = <(String, IconData, Color)>[
+  ('Fruits', Icons.apple_rounded, Color(0xFF34D399)),
+  ('Fish', Icons.set_meal_rounded, Color(0xFF60A5FA)),
+  ('Chicken', Icons.lunch_dining_rounded, Color(0xFFF472B6)),
+  ('Pizza', Icons.local_pizza_rounded, Color(0xFFFFA34D)),
+  ('Drinks', Icons.local_drink_rounded, Color(0xFF38BDF8)),
+];
+
+void main() => runApp(const GroceryApp());
+
+class GroceryApp extends StatefulWidget {
+  const GroceryApp({super.key});
+  
+  @override
+  State<GroceryApp> createState() => _GroceryAppState();
+}
+
+class _GroceryAppState extends State<GroceryApp> {
+  int brandIndex = 0;
+  bool dark = false;
+
+  static const kBrandColors = <Color>[
+    Color(0xFF10B981), // green
+    Color(0xFF3B82F6), // blue
+    Color(0xFFF59E0B), // amber
+    Color(0xFFEF4444), // red
+    Color(0xFF06B6D4), // cyan
+    Color(0xFF8B5CF6), // violet
+    Color(0xFF22C55E), // emerald
+    Color(0xFFF472B6), // pink
+    Color(0xFFFF7849), // orange
+    Color(0xFF14B8A6), // teal
+    Color(0xFF6366F1), // indigo
+    Color(0xFFA3E635), // lime
+  ];
+
+  ThemeData _theme(Brightness b) {
+    final seed = _GroceryAppState.kBrandColors[brandIndex];
+    final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: b);
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      textTheme: GoogleFonts.interTextTheme(),
+      scaffoldBackgroundColor:
+          b == Brightness.dark ? const Color(0xFF0E1628) : const Color(0xFFF6F7F9),
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
+        elevation: 0,
+        centerTitle: false,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Grocery Look-alike',
+      theme: _theme(Brightness.light),
+      darkTheme: _theme(Brightness.dark),
+      themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+      home: RootShell(
+        onPickBrand: (i) => setState(() => brandIndex = i),
+        onToggleDark: () => setState(() => dark = !dark),
+        brandIndex: brandIndex,
+        brandColors: _GroceryAppState.kBrandColors,
+        dark: dark,
+      ),
+    );
+  }
+}
+
+class RootShell extends StatefulWidget {
+  const RootShell({
+    super.key,
+    required this.onPickBrand,
+    required this.onToggleDark,
+    required this.brandIndex,
+    required this.brandColors,
+    required this.dark,
+  });
+
+  final void Function(int) onPickBrand;
+  final VoidCallback onToggleDark;
+  final int brandIndex;
+  final List<Color> brandColors;
+  final bool dark;
+
+  @override
+  State<RootShell> createState() => _RootShellState();
+}
+
+class _RootShellState extends State<RootShell> {
+  int _tab = 0;
+  final cart = <String, int>{}; // productId -> qty
+  final fav = <String>{};
+
+  void addToCart(Product p) =>
+      setState(() => cart.update(p.id, (v) => v + 1, ifAbsent: () => 1));
+  void removeFromCart(Product p) =>
+      setState(() => cart.update(p.id, (v) => math.max(0, v - 1), ifAbsent: () => 0));
+  void toggleFav(Product p) =>
+      setState(() => fav.contains(p.id) ? fav.remove(p.id) : fav.add(p.id));
+
+  Widget _buildCurrentPage() {
+    switch (_tab) {
+      case 0:
+        return HomePage(
+          cart: cart,
+          fav: fav,
+          onAdd: addToCart,
+          onFav: toggleFav,
+          onOpenColorPicker: widget.onToggleDark,
+          onOpenDetail: (p) => {},
+        );
+      case 1:
+        return OrdersPage();
+      case 2:
+        return CartPage(
+          cart: cart,
+          onAdd: addToCart,
+          onRemove: removeFromCart,
+        );
+      case 3:
+        return FavoritesPage(
+          fav: fav,
+          onFav: toggleFav,
+          onAdd: addToCart,
+          onOpenDetail: (p) => {},
+        );
+      case 4:
+        return ProfilePage(
+          onOpenOrders: () => setState(() => _tab = 1),
+        );
+      default:
+        return const Center(child: Text('Page not found'));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _buildCurrentPage(),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tab,
+        onDestinationSelected: (index) => setState(() => _tab = index),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: 'Orders',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.shopping_cart_outlined),
+            selectedIcon: Icon(Icons.shopping_cart),
+            label: 'Cart',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.favorite_outline),
+            selectedIcon: Icon(Icons.favorite),
+            label: 'Favorites',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openCustomizer(context),
+        icon: const Icon(Icons.tune),
+        label: const Text('Customize'),
+      ),
+    );
+  }
+
+  void _openCustomizer(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Select Color',
+                  style:
+                      Theme.of(ctx).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: List.generate(widget.brandColors.length, (i) {
+                  final c = widget.brandColors[i];
+                  final active = widget.brandIndex == i;
+                  return GestureDetector(
+                    onTap: () {
+                      widget.onPickBrand(i);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: c,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: active ? cs.onPrimary : Colors.white,
+                          width: active ? 2.5 : 2,
+                        ),
+                        boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black26)],
+                      ),
+                      child: active
+                          ? const Icon(Icons.check, color: Colors.white, size: 18)
+                          : null,
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      onPressed: widget.onToggleDark,
+                      icon: Icon(Theme.of(context).brightness == Brightness.dark
+                          ? Icons.wb_sunny
+                          : Icons.nightlight_round),
+                      label: Text(Theme.of(context).brightness == Brightness.dark
+                          ? 'Light Mode'
+                          : 'Dark Mode'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

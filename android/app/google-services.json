@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "309361781382",
+    "project_id": "pembuatanlogin",
+    "storage_bucket": "pembuatanlogin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:309361781382:android:8453f741548fa5104f3f07",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_12"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOboZ6YyojCFIEWOWVOgTjPRHuqfjWXkM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
